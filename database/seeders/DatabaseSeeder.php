@@ -12,11 +12,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        $this->call([
+            LaneSeeder::class,
+            UserSeeder::class,
+            PostSeeder::class,
+            // 他のシーダーもここに追加できます
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+
+
+        ]);
+        
     }
 }

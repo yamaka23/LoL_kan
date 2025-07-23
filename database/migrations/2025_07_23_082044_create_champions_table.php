@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('champions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->string('name');// チャンピオン名は一意である必要があります
-            $table->string('image_url')->nullable();
+            $table->string('image')->nullable();
             $table->string('language')->default('ja'); // デフォルトは日本語
             $table->string('version')->nullable(); // デフォルトは最新バージョン
             $table->timestamps();

@@ -16,3 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/sync-champions', [ChampionController::class, 'syncChampions']);
+Route::get('/champions', [ChampionController::class, 'listChampions']);

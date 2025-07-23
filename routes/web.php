@@ -15,6 +15,7 @@ Route::get('/', function () {
 });
 
 
+// チャンピオン同期ルート
 Route::get('/sync-champions', [ChampionController::class, 'syncChampions']);
 Route::get('/champions', [ChampionController::class, 'listChampions']);
 

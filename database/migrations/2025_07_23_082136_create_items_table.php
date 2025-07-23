@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->string('image_url')->nullable();
+            $table->string('image')->nullable();
             $table->text('description')->nullable();
             $table->string('plaintext')->nullable();
             $table->json('tags')->nullable();

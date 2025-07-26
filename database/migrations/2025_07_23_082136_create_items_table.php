@@ -22,7 +22,7 @@ return new class extends Migration
             $table->json('gold')->nullable();
             $table->boolean('in_store')->default(true);
             $table->boolean('purchasable')->default(true);
-            $table->string('language')->default('ja'); // デフォルトは日本語
+            $table->string('language')->default('ja_JP'); // デフォルトは日本語
             $table->integer('depth')->nullable(); // アイテムの深さ（ツリー構造用）
             $table->string('required_champion')->nullable(); // チャンピオン固有のアイテム
             $table->boolean('is_summoners_rift_available')->default(false); // サモナーズリフトで利用可能かどうか

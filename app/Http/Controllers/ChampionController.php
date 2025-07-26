@@ -15,7 +15,7 @@ class ChampionController extends Controller
      */
     public function syncChampions()
     {
-        $language = 'ja';
+        $language = 'ja_JP'; // API用
 
         // 1. 最新バージョンを取得
         try {

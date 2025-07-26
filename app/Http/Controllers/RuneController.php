@@ -16,9 +16,7 @@ class RuneController extends Controller
      */
     public function syncRunes()
     {
-        $languageApi = 'ja_JP'; // API用
-        $language = 'ja';       // DB保存用
-
+        $language = 'ja_JP'; // API用
 
         // 1. 最新バージョンを取得 
         try {
@@ -37,7 +35,6 @@ class RuneController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
-
 
         // 2. ルーンデータを取得 
         $runeDataUrl = "https://ddragon.leagueoflegends.com/cdn/{$latestVersion}/data/{$language}/runesReforged.json";
@@ -58,7 +55,6 @@ class RuneController extends Controller
             ], 500);
         }
 
-
         // 3. データベースに保存
         $savedMainRunes = 0;
         $savedNormalRunes = 0;
@@ -66,11 +62,9 @@ class RuneController extends Controller
 
         DB::beginTransaction();
         try {
-            // ルーンパスのループ (覇道, 栄華, ...)
             foreach ($runePathsData as $pathData) {
                 try {
-                    // ▼▼▼ ここを変更 ▼▼▼
-                    // 1. パス情報を `main_runes` テーブルに保存
+                    // 1. main_runes に保存
                     $mainRune = MainRune::updateOrCreate(
                         ['id' => $pathData['id']],
                         [
@@ -80,30 +74,28 @@ class RuneController extends Controller
                     );
                     $savedMainRunes++;
 
-                    // スロットのループ
+                    // 2. runes に保存
                     foreach ($pathData['slots'] as $slotIndex => $slotData) {
-                        // 個別ルーンのループ
                         foreach ($slotData['runes'] as $runeData) {
-                            
-                            // ▼▼▼ ここを変更 ▼▼▼
-                            // 2. 個別ルーン情報をすべて `runes` テーブルに保存
                             Rune::updateOrCreate(
                                 ['id' => $runeData['id']],
                                 [
-                                    // 親であるパスのIDと紐づけ
                                     'main_rune_id' => $pathData['id'], 
                                     'name' => $runeData['name'],
                                     'icon' => $runeData['icon'],
                                     'long_desc' => $runeData['longDesc'] ?? '',
-                                    'slot_index' => $slotIndex, // スロットのインデックスを保存
-
+                                    'slot_index' => $slotIndex,
+                                    'language' => $language,
+                                    'version' => $latestVersion,
                                 ]
                             );
                             $savedNormalRunes++;
                         }
                     }
                 } catch (\Exception $e) {
-                    Log::error("RuneSync: Path ID {$pathData['id']} の保存に失敗しました。", ['message' => $e->getMessage()]);
+                    Log::error("RuneSync: Path ID {$pathData['id']} の保存に失敗しました。", [
+                        'message' => $e->getMessage()
+                    ]);
                     $errorCount++;
                 }
             }
@@ -118,7 +110,9 @@ class RuneController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('ルーン同期処理中に致命的なエラーが発生しました。', ['message' => $e->getMessage()]);
+            Log::error('ルーン同期処理中に致命的なエラーが発生しました。', [
+                'message' => $e->getMessage()
+            ]);
             return response()->json([
                 'error' => '同期処理中に致命的なエラーが発生しました。',
                 'message' => $e->getMessage(),
@@ -147,7 +141,6 @@ class RuneController extends Controller
                         ->where('version', $latestVersionEntry->version)
                         ->orderBy('name')
                         ->get();
-
 
         return view('runes.list', [
             'runes' => $runes,

@@ -3,6 +3,9 @@
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ChampionController;
+use App\Http\Controllers\RuneController;
+use App\Http\Controllers\ItemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,8 +18,12 @@ Route::get('/', function () {
 });
 
 
-// チャンピオン同期ルート
+// API同期ルート
 Route::get('/sync-champions', [ChampionController::class, 'syncChampions']);
+Route::get('/sync-runes', [RuneController::class, 'syncRunes']);
+Route::get('/sync-items', [ItemController::class, 'syncItems']);
+
+
 Route::get('/champions', [ChampionController::class, 'listChampions']);
 
 // ダッシュボード（ログイン済ユーザーのみ）

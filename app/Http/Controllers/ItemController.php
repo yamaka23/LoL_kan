@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Item;
+use App\Models\ItemMaterial;
+use App\Models\ItemRelation;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ class ItemController extends Controller
      */
     public function syncItems()
     {
-        $language = 'ja';
+        $language = 'ja_JP'; // API用
 
         // 1. 最新バージョンを取得
         try {
@@ -37,7 +39,7 @@ class ItemController extends Controller
         }
 
         // 2. アイテムデータを取得
-        $itemsDataUrl = "https://ddragon.leagueoflegends.com/cdn/{$latestVersion}/data/ja_JP/item.json";
+        $itemsDataUrl = "https://ddragon.leagueoflegends.com/cdn/{$latestVersion}/data/{$language}/item.json";
         try {
             $itemsResponse = Http::withoutVerifying()->get($itemsDataUrl);
             $itemsResponse->throw();
@@ -64,7 +66,7 @@ class ItemController extends Controller
         try {
             foreach ($itemListData as $itemApiId => $details) {
                 try {
-                    Item::updateOrCreate(
+                    $item = Item::updateOrCreate(
                         [
                             'id' => $itemApiId,
                             'language' => $language,
@@ -87,6 +89,32 @@ class ItemController extends Controller
                         ]
                     );
                     $savedCount++;
+
+                    // from素材を保存
+                    if (!empty($details['from'])) {
+                        foreach ($details['from'] as $materialId) {
+                            if (isset($itemListData[$materialId])) {
+                                $materialData = $itemListData[$materialId];
+
+                                $material = ItemMaterial::updateOrCreate(
+                                    ['name' => $materialData['name']],
+                                    [
+                                        'image_url' => $materialData['image']['full'] ?? null,
+                                        'stats' => $materialData['stats'] ?? [],
+                                        'gold' => $materialData['gold']['total'] ?? null,
+                                    ]
+                                );
+
+                                ItemRelation::updateOrCreate(
+                                    [
+                                        'item_id' => $item->id,
+                                        'material_item_id' => $material->id,
+                                    ],
+                                    ['count' => 1]
+                                );
+                            }
+                        }
+                    }
                 } catch (\Exception $e) {
                     Log::error("アイテムの保存に失敗しました: {$itemApiId}", ['message' => $e->getMessage()]);
                     $errorCount++;

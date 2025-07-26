@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Lane extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'id',
+        'name',
+    ];
 }

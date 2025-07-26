@@ -47,15 +47,22 @@ class Post extends Model
         return $this->belongsTo(Lane::class);
     }
 
-    // ルーン（多対多）
-    public function runes()
-    {
-        return $this->belongsToMany(Rune::class);
-    }
 
     // アイテム（多対多、順序付き）
     public function items()
     {
-        return $this->belongsToMany(Item::class, 'post_item')->withPivot('order');
+        return $this->belongsToMany(Item::class)->withPivot('order')->withTimestamps();
+    }
+
+    // ルーン（多対多）
+    public function runes()
+    {
+        return $this->belongsToMany(Rune::class)->withPivot('order')->withTimestamps();
+    }
+
+    // ルーンパス（多対多）
+    public function runePaths()
+    {
+        return $this->hasOne(PostRunePaths::class);
     }
 }

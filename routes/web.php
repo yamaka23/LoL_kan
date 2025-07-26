@@ -36,6 +36,8 @@ Route::get('/dashboard', function () {
 
 // 投稿一覧・詳細（誰でもOK）
 Route::resource('posts', PostController::class)->only(['index', 'show']);
+Route::get('/champions/{champion}/posts', [PostController::class, 'championIndex'])->name('champions.posts');
+
 
 // 投稿・いいね（ログインユーザーのみ）
 Route::middleware('auth')->group(function () {

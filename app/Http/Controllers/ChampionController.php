@@ -105,7 +105,7 @@ class ChampionController extends Controller
      */
     public function listChampions()
     {
-        $language = 'ja';
+        $language = 'ja_JP'; 
 
         $latestVersionEntry = Champion::where('language', $language)
             ->orderBy('version', 'desc')

@@ -33,6 +33,8 @@ Route::get('/dashboard', function () {
 
 // 投稿一覧・詳細（誰でも見れる）
 Route::resource('posts', PostController::class)->only(['index', 'show']);
+Route::get('/champions/{champion}/posts', [PostController::class, 'championIndex'])->name('champions.posts');
+
 
 // ログインユーザーのみ：投稿作成・編集・削除・いいね
 Route::middleware('auth')->group(function () {

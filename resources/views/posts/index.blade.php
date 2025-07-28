@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                全投稿一覧
+                {{ isset($champion) ? $champion->name . ' の投稿一覧' : '全投稿一覧' }}
             </h2>
 
             @auth
@@ -21,25 +21,24 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-
                     @forelse ($posts as $post)
                         <div class="p-4 border border-gray-300 rounded mb-4">
                             <h3 class="text-lg font-bold">
-                                <a href="{{ route('posts.show', $post) }}" class="text-blue-600 hover:underline">{{ $post->title }}</a>
+                                <a href="{{ route('posts.show', $post) }}" class="text-blue-600 hover:underline">
+                                    {{ $post->title }}
+                                </a>
                             </h3>
                             <p class="text-sm text-gray-600">
-                                投稿者: {{ $post->user->name ?? '匿名' }} / {{ $post->created_at->format('Y/m/d') }}
+                                投稿者: {{ optional($post->user)->name ?? '匿名' }} / {{ $post->created_at->format('Y/m/d') }}
                             </p>
                         </div>
                     @empty
                         <p class="text-gray-500">投稿はまだありません。</p>
                     @endforelse
 
-                    {{-- ページネーション --}}
                     <div class="mt-6">
                         {{ $posts->links() }}
                     </div>
-
                 </div>
             </div>
         </div>

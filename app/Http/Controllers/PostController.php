@@ -25,17 +25,16 @@ class PostController extends Controller
     }
 
     // チャンピオンごとの投稿一覧
-    public function championIndex($champion_id)
+    public function championIndex(Champion $champion)
     {
-        $posts = Post::where('champion_id', $champion_id)
-            ->with('user')
+ 
+
+        $posts = Post::where('champion_id', $champion->id)
+            ->with('lane', 'user')
             ->latest()
             ->paginate(10);
 
-        return view('posts.index', [
-            'posts' => $posts,
-            'champion_id' => $champion_id,
-        ]);
+        return view('posts.index', compact('posts', 'champion'));
     }
 
     // 投稿詳細

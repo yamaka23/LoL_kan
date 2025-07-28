@@ -25,4 +25,12 @@ class Champion extends Model
     {
         return $this->hasMany(Post::class);
     }
+
+    // App\Models\Champion.php
+
+    public function getRouteKeyName()
+    {
+        return 'id';  // id が文字列の場合でもこれでOK
+    }
+
 }

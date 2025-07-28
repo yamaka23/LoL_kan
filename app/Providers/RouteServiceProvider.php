@@ -17,7 +17,7 @@ class RouteServiceProvider extends ServiceProvider
      *
      * @var string
      */
-    public const HOME = '/dashboard';
+    public const HOME = '/champions/show';
 
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
@@ -27,6 +27,11 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
+
+        Route::bind('champion', function ($value) {
+            return \App\Models\Champion::where('id', $value)->firstOrFail();
+        });
+
 
         $this->routes(function () {
             Route::middleware('api')

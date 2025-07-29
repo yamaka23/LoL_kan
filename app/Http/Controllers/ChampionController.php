@@ -101,6 +101,31 @@ class ChampionController extends Controller
     }
 
     /**
+     * ダッシュボード表示
+     */
+    public function dashboard()
+    {
+        $language = 'ja_JP'; 
+
+        $latestVersionEntry = Champion::where('language', $language)
+            ->orderBy('version', 'desc')
+            ->first();
+
+        $champions = collect();
+        if ($latestVersionEntry) {
+            $champions = Champion::where('language', $language)
+                ->where('version', $latestVersionEntry->version)
+                ->orderBy('name')
+                ->take(12) // ダッシュボードでは12個まで表示
+                ->get();
+        }
+
+        return view('dashboard', [
+            'champions' => $champions,
+        ]);
+    }
+
+    /**
      * チャンピオン一覧の表示
      */
     public function listChampions()

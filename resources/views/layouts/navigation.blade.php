@@ -15,6 +15,14 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('posts.index')" :active="request()->routeIs('posts.index')">
+                        投稿一覧
+                    </x-nav-link>
+                    @auth
+                        <x-nav-link :href="route('posts.create')" :active="request()->routeIs('posts.create')">
+                            投稿作成
+                        </x-nav-link>
+                    @endauth
                 </div>
             </div>
 
@@ -73,6 +81,14 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('posts.index')" :active="request()->routeIs('posts.index')">
+                投稿一覧
+            </x-responsive-nav-link>
+            @auth
+                <x-responsive-nav-link :href="route('posts.create')" :active="request()->routeIs('posts.create')">
+                    投稿作成
+                </x-responsive-nav-link>
+            @endauth
         </div>
 
         <!-- Responsive Settings Options -->

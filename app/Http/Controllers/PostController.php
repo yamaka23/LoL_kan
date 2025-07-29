@@ -47,11 +47,20 @@ class PostController extends Controller
     // 投稿作成画面（ログイン必須）
     public function create()
     {
-        $champions= Champion::orderBy('name')->get();
-        $lanes = Lane::all();
-        $items = Item::orderBy('name')->get();
-        $runes = Rune::orderBy('name')->get();
-        return view('posts.create', compact('champions', 'lanes', 'items', 'runes'));
+        // フォームに必要なデータをデータベースから取得します。
+        $champions = \App\Models\Champion::orderBy('name')->get();
+        $lanes = \App\Models\Lane::all();
+        // アイテムとルーンは一旦省略して、問題を単純化します。
+        // $items = \App\Models\Item::orderBy('name')->get();
+        // $runes = \App\Models\Rune::all();
+
+        // 取得したデータをビューに渡して表示します。
+        return view('posts.create', [
+            'champions' => $champions,
+            'lanes' => $lanes,
+            // 'items' => $items,
+            // 'runes' => $runes,
+        ]);
     }
 
     // 投稿保存処理

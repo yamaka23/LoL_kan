@@ -4,16 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Rune;
-use App\Models\Item;
-use App\Models\Lane;
-use App\Models\Champion;
-use App\Models\User;
 
 class Post extends Model
 {
     use HasFactory;
 
+    /**
+     * マスアサインメントが可能な属性
+     */
     protected $fillable = [
         'user_id',
         'champion_id',
@@ -23,46 +21,53 @@ class Post extends Model
         'content',
     ];
 
-    // 投稿者（ユーザー）: 1対多（逆）
+    /**
+     * 投稿者（ユーザー）とのリレーション (多対1)
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // 使用チャンピオン
+    /**
+     * 使用チャンピオンとのリレーション (多対1)
+     */
     public function champion()
     {
-        return $this->belongsTo(Champion::class, 'champion_id', 'id');
+        return $this->belongsTo(Champion::class);
     }
 
-    // 対戦相手のチャンピオン
+    /**
+     * 対戦相手のチャンピオンとのリレーション (多対1)
+     */
     public function vsChampion()
     {
-        return $this->belongsTo(Champion::class, 'vs_champion_id', 'id');
+        return $this->belongsTo(Champion::class, 'vs_champion_id');
     }
 
-    // レーン
+    /**
+     * レーンとのリレーション (多対1)
+     */
     public function lane()
     {
         return $this->belongsTo(Lane::class);
     }
 
-
-    // アイテム（多対多、順序付き）
+    /**
+     * アイテムとのリレーション (多対多)
+     * ※アイテム機能も今後修正が必要になります
+     */
     public function items()
     {
-        return $this->belongsToMany(Item::class)->withPivot('order')->withTimestamps();
+        return $this->belongsToMany(Item::class, 'post_item')->withPivot('order');
     }
 
-    // ルーン（多対多）
+    /**
+     * 選択されたルーンとのリレーション (多対多)
+     * これが新しい、正しいリレーションの定義です。
+     */
     public function runes()
     {
-        return $this->belongsToMany(Rune::class)->withPivot('order')->withTimestamps();
-    }
-
-    // ルーンパス（多対多）
-    public function runePaths()
-    {
-        return $this->hasOne(PostRunePaths::class);
+        return $this->belongsToMany(Rune::class, 'post_rune');
     }
 }

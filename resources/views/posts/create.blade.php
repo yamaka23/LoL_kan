@@ -10,6 +10,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
 
+                    {{--エラーメッセージの表示--}}
                     @if ($errors->any())
                         <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                             <strong class="font-bold">入力エラー</strong>
@@ -21,28 +22,67 @@
                         </div>
                     @endif
 
+
                     <form action="{{ route('posts.store') }}" method="POST">
                         @csrf
-                        <div class="space-y-8" x-data="runeSelector({{ json_encode($runePaths) }}, {{ json_encode($runesByPath) }}, {{ json_encode($statRunes) }})">
+                        <div class="space-y-8" 
+                             x-data="formController({
+                                champions: {{ json_encode($champions) }},
+                                runePaths: {{ json_encode($runePaths) }},
+                                runesByPath: {{ json_encode($runesByPath) }},
+                                statRunes: {{ json_encode($statRunes) }},
+                                oldChampionId: '{{ old('champion_id') }}',
+                                oldVsChampionId: '{{ old('vs_champion_id') }}'
+                             })">
+
 
                             {{-- 基本情報セクション --}}
                             <div class="space-y-6">
+
+                                {{-- タイトル --}}
                                 <div>
                                     <x-input-label for="title" :value="__('タイトル')" />
                                     <x-text-input id="title" class="block mt-1 w-full" type="text" name="title" :value="old('title')" required autofocus />
                                 </div>
 
+                                
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                    {{-- 使用チャンピオン --}}
                                     <div>
                                         <x-input-label for="champion_id" :value="__('使用チャンピオン')" />
-                                        <select id="champion_id" name="champion_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700" required>
-                                            <option value="">選択してください</option>
-                                            @foreach ($champions as $champion)
-                                                <option value="{{ $champion->id }}" @selected(old('champion_id') == $champion->id)>{{ $champion->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <input type="hidden" name="champion_id" x-model="selectedChampionId">
+                                        <button type="button" @click="openChampionModal('main')" class="mt-1 w-full h-16 flex items-center p-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm text-left">
+                                            <template x-if="selectedChampion">
+                                                <div class="flex items-center">
+                                                    <img :src="getChampionImage(selectedChampion.image, selectedChampion.version)" class="w-12 h-12 rounded-md mr-4">
+                                                    <span class="font-semibold" x-text="selectedChampion.name"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="!selectedChampion">
+                                                <span class="text-gray-500">チャンピオンを選択...</span>
+                                            </template>
+                                        </button>
+                                    </div>
+                                    
+                                    {{-- 対戦相手チャンピオン --}}
+                                    <div>
+                                        <x-input-label for="vs_champion_id" :value="__('対面チャンピオン（任意）')" />
+                                        <input type="hidden" name="vs_champion_id" x-model="selectedVsChampionId">
+                                        <button type="button" @click="openChampionModal('vs')" class="mt-1 w-full h-16 flex items-center p-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm text-left">
+                                            <template x-if="selectedVsChampion">
+                                                <div class="flex items-center">
+                                                    <img :src="getChampionImage(selectedVsChampion.image, selectedVsChampion.version)" class="w-12 h-12 rounded-md mr-4">
+                                                    <span class="font-semibold" x-text="selectedVsChampion.name"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="!selectedVsChampion">
+                                                <span class="text-gray-500">チャンピオンを選択...</span>
+                                            </template>
+                                        </button>
                                     </div>
 
+                                    {{-- レーン選択 --}}
                                     <div>
                                         <x-input-label for="lane_id" :value="__('レーン')" />
                                         <select id="lane_id" name="lane_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 dark:bg-gray-900 dark:border-gray-700" required>
@@ -162,6 +202,35 @@
                                     </x-primary-button>
                                 </div>
                             </div>
+
+                            {{-- チャンピオン選択モーダル --}}
+                            <div x-show="isModalOpen" 
+                                x-trap.inert.noscroll="isModalOpen"
+                                @keydown.escape.window="isModalOpen = false" 
+                                class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" 
+                                x-transition:enter="ease-out duration-300"
+                                x-transition:enter-start="opacity-0"
+                                x-transition:enter-end="opacity-100"
+                                x-transition:leave="ease-in duration-200"
+                                x-transition:leave-start="opacity-100"
+                                x-transition:leave-end="opacity-0"
+                                style="display: none;">
+                                <div @click.away="isModalOpen = false" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+                                    <div class="p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+                                        <input type="text" x-model="searchQuery" placeholder="チャンピオンを検索..." class="w-full p-2 rounded-md bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+                                    </div>
+                                    <div class="p-4 overflow-y-auto flex-1 min-h-0">
+                                        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
+                                            <template x-for="champion in filteredChampions" :key="champion.id">
+                                                <button type="button" @click="selectChampion(champion)" class="flex flex-col items-center space-y-1 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition text-center">
+                                                    <img :src="getChampionImage(champion.image, champion.version)" class="w-16 h-16 rounded-md object-cover">
+                                                    <span class="text-xs truncate w-full" x-text="champion.name"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
 
@@ -172,12 +241,22 @@
 
 
     {{--スクリプト--}}
-        <script>
-        function runeSelector(paths, runesByPath, statRunes) {
+    <script>
+        function formController(data){
             return {
-                runePaths: paths,
-                runesByPath: runesByPath,
-                statRunes: statRunes,
+                debugStatus: '初期化中...', //デバッグステータス
+                //チャンピオンセレクトプロパティ
+                allChampions: data.champions,
+                isModalOpen: false,
+                searchQuery: '',
+                modalType: 'main', // 'main' or 'vs'
+                selectedChampionId: data.oldChampionId || null,
+                selectedVsChampionId: data.oldVsChampionId || null,
+
+                //ルーンセレクトプロパティ
+                runePaths: data.runePaths,
+                runesByPath: data.runesByPath,
+                statRunes: data.statRunes,
                 mainPathId: null,
                 subPathId: null,
                 mainPathTiers: [],
@@ -188,6 +267,48 @@
                 subSelectionOrder: [],      
                 selectedStatRunes: {},      
 
+                init() {
+                    this.availableSubPaths = this.runePaths;
+                    this.debugStatus = 'Ready!';
+                    console.log('formController Initialized Successfully!');
+                },
+
+                //チャンピオンセレクトメゾット
+                get selectedChampion() { return this.allChampions.find(c => c.id == this.selectedChampionId); },
+                get selectedVsChampion() { return this.allChampions.find(c => c.id == this.selectedVsChampionId); },
+                get filteredChampions() {
+                    if (this.searchQuery === '') return this.allChampions;
+                    const queryLower = this.searchQuery.toLowerCase();
+                    const queryKana = this.hiraToKana(queryLower); 
+                    return this.allChampions.filter(c => {
+                        const nameLower = c.name.toLowerCase();
+                        return nameLower.includes(queryLower) || nameLower.includes(queryKana);
+                    });
+                },
+                hiraToKana(str) {
+                    return str.replace(/[\u3041-\u3096]/g, function(match) {
+                        const chr = match.charCodeAt(0) + 0x60;
+                        return String.fromCharCode(chr);
+                    });
+                },
+                openChampionModal(type) {
+                    this.modalType = type;
+                    this.isModalOpen = true;
+                },
+                selectChampion(champion) {
+                    if (this.modalType === 'main') {
+                        this.selectedChampionId = champion.id;
+                    } else {
+                        this.selectedVsChampionId = champion.id;
+                    }
+                    this.isModalOpen = false;
+                    this.searchQuery = '';
+                },
+                getChampionImage(image, version) {
+                    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${image}`;
+                },
+
+                //ルーンセレクトメゾット
                 get selectedRuneIds() { 
                     return [...Object.values(this.selectedMainRunes), ...Object.values(this.selectedSubRunes), ...Object.values(this.selectedStatRunes)];
                 },
@@ -242,8 +363,7 @@
                         this.selectedStatRunes[tierIndex] = runeId;
                     }
                 },
-                isSelected(type, tierIndex, runeId) {
-                    // 全てのタイプで、tierIndexをキーとして直接比較するように修正
+                isSelected(type, tierIndex, runeId) {                   
                     if (type === 'main') return this.selectedMainRunes[tierIndex] === runeId;
                     if (type === 'sub') return this.selectedSubRunes[tierIndex] === runeId;
                     if (type === 'stat') return this.selectedStatRunes[tierIndex] === runeId;

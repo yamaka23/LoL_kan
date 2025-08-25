@@ -190,7 +190,14 @@
                                     </div>
                                 </div>
                                 
-                                <input type="hidden" name="runes" :value="JSON.stringify(selectedRuneIds)">
+                                <div id="rune-hidden-inputs" class="hidden">
+                                    <template x-for="runeId in normalRuneIds">
+                                        <input type="hidden" name="runes[]" :value="runeId">
+                                    </template>
+                                    <template x-for="statRuneId in statRuneIds">
+                                        <input type="hidden" name="stat_runes[]" :value="statRuneId">
+                                    </template>
+                                </div>
                             </div>
 
                             {{-- アイテム選択セクション --}}
@@ -324,7 +331,7 @@
                                         </div>
                                     </div>
                                     <div class="p-4 border-t dark:border-gray-700 text-right">
-                                        <button @click="isItemModalOpen = false" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md font-semibold">
+                                        <button type="button" @click="isItemModalOpen = false" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md font-semibold">
                                             完了
                                         </button>
                                     </div>
@@ -420,8 +427,11 @@
                 },
 
                 //ルーンセレクトメゾット
-                get selectedRuneIds() {
-                    return [...Object.values(this.selectedMainRunes), ...Object.values(this.selectedSubRunes), ...Object.values(this.selectedStatRunes)];
+                get normalRuneIds() {
+                    return [...Object.values(this.selectedMainRunes), ...Object.values(this.selectedSubRunes)];
+                },
+                get statRuneIds() {
+                    return Object.values(this.selectedStatRunes);
                 },
                 selectMainPath(pathId) {
                     if (this.mainPathId === pathId) return;

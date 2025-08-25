@@ -125,10 +125,16 @@ class PostController extends Controller
             'lane_id' => 'required|exists:lanes,id',
             'runes' => 'required|array', // 'json' から 'array' に変更
             'runes.*' => 'exists:runes,id',
+            'stat_runes' => 'required|array|size:3',
+            'stat_runes.*' => 'exists:stat_runes,id',
+            'items' => 'nullable|array',
+            'items.*' => 'exists:items,id',
         ]);
 
         // JSON形式のルーンIDをPHPの配列に変換
         $runeIds = $validated['runes'];
+        $statRuneIds = $validated['stat_runes'];
+        $itemIds = $validated['items'] ?? [];
 
         // 選択されたルーンの数が正しいかどうかの追加バリデーション
         if (count($runeIds) < 6) { // メイン4つ、サブ2つなど、ルールに合わせて調整
@@ -148,6 +154,18 @@ class PostController extends Controller
 
             // 投稿と選択されたルーンを中間テーブル(post_rune)に保存
             $post->runes()->attach($runeIds);
+            $post->statRunes()->attach($statRuneIds);
+
+            // 投稿と選択されたアイテムを中間テーブル(post_item)に保存
+            if (!empty($itemIds)) {
+                $itemsToAttach = [];
+                foreach ($itemIds as $index => $itemId) {
+                    if ($itemId) {
+                        $itemsToAttach[$itemId] = ['order' => $index];
+                    }
+                }
+                $post->items()->attach($itemsToAttach);
+            }
 
             DB::commit();
             return redirect()->route('posts.show', $post)->with('success', '投稿が作成されました！');

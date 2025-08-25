@@ -70,4 +70,9 @@ class Post extends Model
         // 中間テーブル 'post_rune' を経由して、たくさんの Rune を持つ
         return $this->belongsToMany(Rune::class, 'post_rune');
     }
+
+    public function statRunes()
+    {
+        return $this->belongsToMany(StatRune::class, 'post_stat_rune');
+    }
 }

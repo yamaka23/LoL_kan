@@ -55,7 +55,6 @@ class Post extends Model
 
     /**
      * アイテムとのリレーション (多対多)
-     * ※アイテム機能も今後修正が必要になります
      */
     public function items()
     {
@@ -68,6 +67,7 @@ class Post extends Model
      */
     public function runes()
     {
+        // 中間テーブル 'post_rune' を経由して、たくさんの Rune を持つ
         return $this->belongsToMany(Rune::class, 'post_rune');
     }
 }

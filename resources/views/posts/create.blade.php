@@ -26,14 +26,17 @@
                     <form action="{{ route('posts.store') }}" method="POST">
                         @csrf
                         <div class="space-y-8" 
-                             x-data="formController({
+                            x-data="formController({
                                 champions: {{ json_encode($champions) }},
+                                items: {{ json_encode($items) }},
                                 runePaths: {{ json_encode($runePaths) }},
                                 runesByPath: {{ json_encode($runesByPath) }},
                                 statRunes: {{ json_encode($statRunes) }},
                                 oldChampionId: '{{ old('champion_id') }}',
-                                oldVsChampionId: '{{ old('vs_champion_id') }}'
-                             })">
+                                oldVsChampionId: '{{ old('vs_champion_id') }}',
+                                itemTagMap: {{ json_encode($itemTagMap ?? []) }}
+                            })"
+                            x-init="init()">
 
 
                             {{-- 基本情報セクション --}}
@@ -190,6 +193,36 @@
                                 <input type="hidden" name="runes" :value="JSON.stringify(selectedRuneIds)">
                             </div>
 
+                            {{-- アイテム選択セクション --}}
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-8">
+                                <h3 class="text-lg font-bold mb-4 text-center">アイテムビルド</h3>
+                                <div class="flex justify-center gap-2 md:gap-4 p-4 bg-gray-900 rounded-lg">
+                                    <template x-for="i in 6" :key="i">
+                                        <div @drop.prevent="handleItemDrop($event, i - 1); $el.classList.remove('border-yellow-400')"
+                                            
+                                            @dragover.prevent
+                                            @dragenter.prevent="$el.classList.add('border-yellow-400')"
+                                            @dragleave.prevent="$el.classList.remove('border-yellow-400')"
+                                            class="drop-zone w-16 h-16 bg-gray-800 border-2 border-dashed border-gray-700 rounded-md flex items-center justify-center transition-colors">
+                                            
+                                            <template x-if="selectedItems[i - 1]">
+                                                <div @dragstart="handleItemDragStart($event, i - 1)" draggable="true" class="w-full h-full cursor-grab">
+                                                    <img :src="getItemImage(selectedItems[i - 1].image, selectedItems[i - 1].version)" :alt="selectedItems[i - 1].name" class="w-full h-full object-cover rounded-md pointer-events-none">
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="text-center mt-4">
+                                    <button type="button" @click="isItemModalOpen = true" class="text-indigo-400 hover:text-indigo-300 font-semibold">
+                                        アイテム一覧から選択
+                                    </button>
+                                </div>
+                                <template x-for="(item, index) in selectedItems">
+                                     <input type="hidden" :name="`items[${index}]`" :value="item ? item.id : ''">
+                                </template>
+                            </div>
+
                             {{-- 内容入力欄と投稿ボタン --}}
                             <div class="space-y-6">
                                 <div>
@@ -204,9 +237,9 @@
                             </div>
 
                             {{-- チャンピオン選択モーダル --}}
-                            <div x-show="isModalOpen" 
-                                x-trap.inert.noscroll="isModalOpen"
-                                @keydown.escape.window="isModalOpen = false" 
+                            <div x-show="isChampionModalOpen" 
+                                x-trap.inert.noscroll="isChampionModalOpen"
+                                @keydown.escape.window="isChampionModalOpen = false" 
                                 class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" 
                                 x-transition:enter="ease-out duration-300"
                                 x-transition:enter-start="opacity-0"
@@ -215,7 +248,7 @@
                                 x-transition:leave-start="opacity-100"
                                 x-transition:leave-end="opacity-0"
                                 style="display: none;">
-                                <div @click.away="isModalOpen = false" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
+                                <div @click.away="isChampionModalOpen = false" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col">
                                     <div class="p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
                                         <input type="text" x-model="searchQuery" placeholder="チャンピオンを検索..." class="w-full p-2 rounded-md bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
                                     </div>
@@ -231,7 +264,74 @@
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- アイテム選択モーダル --}}
+                            <div x-show="isItemModalOpen" @keydown.escape.window="isItemModalOpen = false" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" style="display: none;" x-transition>
+                                <div @click.away="isItemModalOpen = false" class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] flex flex-col">
+                                    <div class="p-4 border-b dark:border-gray-700">
+                                        <h3 class="text-lg font-bold">アイテムビルドを編集</h3>
+                                    </div>
+                                    <div class="p-4 bg-gray-900 border-b dark:border-gray-700">
+                                        <div class="flex justify-center gap-3">
+                                            <template x-for="(item, index) in selectedItems" :key="index">
+                                                <div
+                                                    @drop.prevent="handleItemDrop($event, index)"
+                                                    @dragover.prevent
+                                                    @dragenter.prevent="$el.classList.add('border-yellow-400')"
+                                                    @dragleave.prevent="$el.classList.remove('border-yellow-400')"
+                                                    class="drop-zone w-16 h-16 bg-gray-800 border-2 border-dashed border-gray-700 rounded-md flex items-center justify-center relative transition-colors">
+                                                    <div x-if="item" 
+                                                        draggable="true" 
+                                                        @dragstart="handleItemDragStart($event, index, null)"
+                                                        class="w-full h-full cursor-grab relative group">
+                                                        <img :src="getItemImage(item.image, item.version)" :alt="item.name" class="w-full h-full object-cover rounded-md pointer-events-none">
+                                                        <button type="button" @click="removeItemFromBuild(index)" class="absolute top-0 right-0 -mt-2 -mr-2 w-5 h-5 bg-red-600 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity z-10">&times;</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-1 min-h-0">
+                                        <div class="w-1/4 md:w-1/5 p-4 border-r dark:border-gray-700 overflow-y-auto">
+                                            <h4 class="font-bold mb-2">フィルター</h4>
+                                            <div class="space-y-1">
+                                                <template x-for="(japanese, english) in itemTagMap" :key="english">
+                                                    <label class="flex items-center space-x-2 cursor-pointer">
+                                                        <input type="checkbox" x-model="selectedItemTags" :value="english" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800">
+                                                        <span x-text="japanese"></span>
+                                                    </label>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="w-3/4 md:w-4/5 flex flex-col">
+                                            <div class="p-4 border-b dark:border-gray-700">
+                                                <input type="text" x-model="itemSearchQuery" placeholder="アイテムを検索 (ひらがな可)..." class="w-full p-2 rounded-md bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-600">
+                                            </div>
+                                            <div class="p-4 overflow-y-auto flex-1 min-h-0">
+                                                <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2">
+                                                    <template x-for="item in filteredItems" :key="item.id">
+                                                        {{-- ▼▼▼ @clickとdraggable/@dragstartを両方設定 ▼▼▼ --}}
+                                                        <div 
+                                                            @click="addItemToBuild(item)" 
+                                                            draggable="true"
+                                                            @dragstart="handleItemDragStart($event, null, item)"
+                                                            class="p-1 rounded-md hover:bg-gray-700 dark:hover:bg-gray-700 transition cursor-grab">
+                                                            <img :src="getItemImage(item.image, item.version)" class="w-12 h-12 rounded-md object-cover pointer-events-none">
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-4 border-t dark:border-gray-700 text-right">
+                                        <button @click="isItemModalOpen = false" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-md font-semibold">
+                                            完了
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        
                     </form>
 
                 </div>
@@ -244,12 +344,12 @@
     <script>
         function formController(data){
             return {
-                debugStatus: '初期化中...', //デバッグステータス
+                debugStatus: '初期化中...',
                 //チャンピオンセレクトプロパティ
                 allChampions: data.champions,
-                isModalOpen: false,
+                isChampionModalOpen: false,
                 searchQuery: '',
-                modalType: 'main', // 'main' or 'vs'
+                modalType: 'main',
                 selectedChampionId: data.oldChampionId || null,
                 selectedVsChampionId: data.oldVsChampionId || null,
 
@@ -262,11 +362,20 @@
                 mainPathTiers: [],
                 subPathTiers: [],
                 availableSubPaths: [],
-                selectedMainRunes: {},      
-                selectedSubRunes: {},     
-                subSelectionOrder: [],      
-                selectedStatRunes: {},      
+                selectedMainRunes: {},
+                selectedSubRunes: {},
+                subSelectionOrder: [],
+                selectedStatRunes: {},
 
+                //アイテムセレクトプロパティ
+                allItems: data.items,
+                itemTagMap: data.itemTagMap,
+                isItemModalOpen: false,
+                itemSearchQuery: '',
+                selectedItemTags: [],
+                selectedItems: Array(6).fill(null),
+
+                //【修正】重複していたinit()を1つに統合
                 init() {
                     this.availableSubPaths = this.runePaths;
                     this.debugStatus = 'Ready!';
@@ -274,26 +383,28 @@
                 },
 
                 //チャンピオンセレクトメゾット
-                get selectedChampion() { return this.allChampions.find(c => c.id == this.selectedChampionId); },
-                get selectedVsChampion() { return this.allChampions.find(c => c.id == this.selectedVsChampionId); },
+                //【修正】エラーを回避するため、IDが存在しない場合はnullを返すように変更
+                get selectedChampion() {
+                    if (!this.selectedChampionId) return null;
+                    return this.allChampions.find(c => c.id == this.selectedChampionId);
+                },
+                get selectedVsChampion() {
+                    if (!this.selectedVsChampionId) return null;
+                    return this.allChampions.find(c => c.id == this.selectedVsChampionId);
+                },
                 get filteredChampions() {
                     if (this.searchQuery === '') return this.allChampions;
                     const queryLower = this.searchQuery.toLowerCase();
-                    const queryKana = this.hiraToKana(queryLower); 
+                    const queryKana = this.hiraToKana(queryLower);
                     return this.allChampions.filter(c => {
+                        if (!c || !c.name) return false;
                         const nameLower = c.name.toLowerCase();
                         return nameLower.includes(queryLower) || nameLower.includes(queryKana);
                     });
                 },
-                hiraToKana(str) {
-                    return str.replace(/[\u3041-\u3096]/g, function(match) {
-                        const chr = match.charCodeAt(0) + 0x60;
-                        return String.fromCharCode(chr);
-                    });
-                },
                 openChampionModal(type) {
                     this.modalType = type;
-                    this.isModalOpen = true;
+                    this.isChampionModalOpen = true;
                 },
                 selectChampion(champion) {
                     if (this.modalType === 'main') {
@@ -301,7 +412,7 @@
                     } else {
                         this.selectedVsChampionId = champion.id;
                     }
-                    this.isModalOpen = false;
+                    this.isChampionModalOpen = false;
                     this.searchQuery = '';
                 },
                 getChampionImage(image, version) {
@@ -309,10 +420,9 @@
                 },
 
                 //ルーンセレクトメゾット
-                get selectedRuneIds() { 
+                get selectedRuneIds() {
                     return [...Object.values(this.selectedMainRunes), ...Object.values(this.selectedSubRunes), ...Object.values(this.selectedStatRunes)];
                 },
-                init() { this.availableSubPaths = this.runePaths; },
                 selectMainPath(pathId) {
                     if (this.mainPathId === pathId) return;
                     this.mainPathId = pathId;
@@ -341,19 +451,14 @@
                         const isTierSelectedAtAll = this.selectedSubRunes.hasOwnProperty(tierIndex);
 
                         if (isAlreadySelectedInThisTier) {
-                            // 同じルーンを再度クリック => 選択解除
                             delete this.selectedSubRunes[tierIndex];
                             this.subSelectionOrder = this.subSelectionOrder.filter(t => t !== tierIndex);
                         } else if (isTierSelectedAtAll) {
-                            // 同じ段の違うルーンをクリック => 選択の上書き
                             this.selectedSubRunes[tierIndex] = runeId;
-                            // 選択順は変更しない
                         } else if (Object.keys(this.selectedSubRunes).length < 2) {
-                            // 新しい段で、まだ2つ選択されていない場合 => 新規選択
                             this.selectedSubRunes[tierIndex] = runeId;
                             this.subSelectionOrder.push(tierIndex);
                         } else {
-                            // 新しい段で、すでに2つ選択済みの場合 => 一番古いものを削除して新規選択
                             const oldestTier = this.subSelectionOrder.shift();
                             delete this.selectedSubRunes[oldestTier];
                             this.selectedSubRunes[tierIndex] = runeId;
@@ -363,7 +468,7 @@
                         this.selectedStatRunes[tierIndex] = runeId;
                     }
                 },
-                isSelected(type, tierIndex, runeId) {                   
+                isSelected(type, tierIndex, runeId) {
                     if (type === 'main') return this.selectedMainRunes[tierIndex] === runeId;
                     if (type === 'sub') return this.selectedSubRunes[tierIndex] === runeId;
                     if (type === 'stat') return this.selectedStatRunes[tierIndex] === runeId;
@@ -373,7 +478,66 @@
                     const selectedCount = Object.keys(this.selectedSubRunes).length;
                     if (selectedCount < 2) return false;
                     return !this.selectedSubRunes.hasOwnProperty(tierIndex);
-                }
+                },
+
+
+                //アイテムセレクトメゾット
+                addItemToBuild(item) {
+                    const firstEmptyIndex = this.selectedItems.indexOf(null);
+                    if (firstEmptyIndex !== -1) {
+                        this.selectedItems[firstEmptyIndex] = item;
+                    } else {
+                        alert('ビルドがいっぱいです。');
+                    }
+                },
+                removeItemFromBuild(index) {
+                    this.selectedItems[index] = null;
+                },
+                handleItemDragStart(event, fromIndex = null, item = null) {
+                    const dragData = item ? { type: 'new', item: item } : { type: 'move', fromIndex: fromIndex };
+                    event.dataTransfer.setData('application/json', JSON.stringify(dragData));
+                    event.dataTransfer.effectAllowed = 'move';
+                },
+                handleItemDrop(event, toIndex) {
+                    const dragData = JSON.parse(event.dataTransfer.getData('application/json'));
+                    if (dragData.type === 'new') {
+                        this.selectedItems[toIndex] = dragData.item;
+                    } else if (dragData.type === 'move') {
+                        const fromIndex = dragData.fromIndex;
+                        if (fromIndex === toIndex) return;
+                        [this.selectedItems[fromIndex], this.selectedItems[toIndex]] = [this.selectedItems[toIndex], this.selectedItems[fromIndex]];
+                    }
+                    event.target.closest('.drop-zone').classList.remove('border-yellow-400');
+                },
+                getItemImage(image, version) {
+                    return `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${image}`;
+                },
+                get filteredItems() {
+                    let items = this.allItems;
+                    if (this.selectedItemTags.length > 0) {
+                        items = items.filter(item =>
+                            this.selectedItemTags.every(tag => item.tags && item.tags.includes(tag))
+                        );
+                    }
+                    if (this.itemSearchQuery.trim() !== '') {
+                        const queryLower = this.itemSearchQuery.toLowerCase();
+                        const queryKana = this.hiraToKana(queryLower);
+                        items = items.filter(item => {
+                            if (!item || !item.name) return false;
+                            const nameLower = item.name.toLowerCase();
+                            return nameLower.includes(queryLower) || nameLower.includes(queryKana);
+                        });
+                    }
+                    return items;
+                },
+
+               
+                hiraToKana(str) {
+                    return str.replace(/[\u3041-\u3096]/g, function(match) {
+                        const chr = match.charCodeAt(0) + 0x60;
+                        return String.fromCharCode(chr);
+                    });
+                },
             }
         }
     </script>

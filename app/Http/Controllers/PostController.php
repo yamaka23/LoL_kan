@@ -53,14 +53,12 @@ class PostController extends Controller
         // フォームの基本情報を取得
         $champions = \App\Models\Champion::orderBy('name')->get();
         $lanes = \App\Models\Lane::all();
-
-        // --- ▼ ルーンUI用のデータ準備 ▼ ---
-
-        // 1. パスの一覧を取得 (覇道、栄華など)
         $runePaths = \App\Models\RunePath::all();
-
-        // 2. メインルーンをパスごと、段ごとに整理
         $allRunes = \App\Models\Rune::all();
+        $allItems = \App\Models\Item::all();
+
+        
+
         $runesByPath = [];
         foreach ($runePaths as $path) {
             $runesByPath[$path->id] = [
@@ -79,7 +77,27 @@ class PostController extends Controller
             $allStatRunes->where('tier', 2)->sortBy('slot_index')->values(),
         ];
 
-        // --- ▲ ルーンUI用のデータ準備 ▲ ---
+        $validItems = $allItems->filter(function ($item) {
+            return $item !== null && !empty($item->name) && !empty($item->image);
+        });
+
+        $itemTagMap = [
+            'Damage' => '攻撃力',
+            'AttackSpeed' => '攻撃速度',
+            'CriticalStrike' => 'クリティカル',
+            'LifeSteal' => 'ライフスティール',
+            'ArmorPenetration' => '物理防御貫通',
+            'SpellDamage' => '魔力',
+            'CooldownReduction' => 'スキルヘイスト',
+            'ManaRegen' => 'マナ自動回復',
+            'MagicPenetration' => '魔法防御貫通',
+            'Health' => '体力',
+            'Armor' => '物理防御',
+            'MagicResist' => '魔法防御',
+            'HealthRegen' => '体力自動回復',
+            'NonbootsMovement' => '移動速度',
+            'Boots' => 'ブーツ',
+        ];
 
         // 全てのデータをビューに渡す
         return view('posts.create', [
@@ -87,7 +105,9 @@ class PostController extends Controller
             'lanes' => $lanes,
             'runePaths' => $runePaths,
             'runesByPath' => $runesByPath,
-            'statRunes' => $statRunes, // ステータスルーンのデータを追加
+            'statRunes' => $statRunes,
+            'items' => $validItems,
+            'itemTagMap' => $itemTagMap,
         ]);
     }
 
@@ -103,11 +123,12 @@ class PostController extends Controller
             'content' => 'nullable|string',
             'champion_id' => 'required|exists:champions,id',
             'lane_id' => 'required|exists:lanes,id',
-            'runes' => 'required|json', // UIからJSON形式で送られてくる
+            'runes' => 'required|array', // 'json' から 'array' に変更
+            'runes.*' => 'exists:runes,id',
         ]);
 
         // JSON形式のルーンIDをPHPの配列に変換
-        $runeIds = json_decode($validated['runes']);
+        $runeIds = $validated['runes'];
 
         // 選択されたルーンの数が正しいかどうかの追加バリデーション
         if (count($runeIds) < 6) { // メイン4つ、サブ2つなど、ルールに合わせて調整
@@ -126,9 +147,7 @@ class PostController extends Controller
             ]);
 
             // 投稿と選択されたルーンを中間テーブル(post_rune)に保存
-            if (!empty($runeIds)) {
-                $post->runes()->attach($runeIds);
-            }
+            $post->runes()->attach($runeIds);
 
             DB::commit();
             return redirect()->route('posts.show', $post)->with('success', '投稿が作成されました！');

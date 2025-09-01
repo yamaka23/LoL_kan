@@ -390,7 +390,6 @@
                 },
 
                 //チャンピオンセレクトメゾット
-                //【修正】エラーを回避するため、IDが存在しない場合はnullを返すように変更
                 get selectedChampion() {
                     if (!this.selectedChampionId) return null;
                     return this.allChampions.find(c => c.id == this.selectedChampionId);

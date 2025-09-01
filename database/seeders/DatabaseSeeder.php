@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             LaneSeeder::class,
             UserSeeder::class,
             PostSeeder::class,
+            StatRuneSeeder::class,
             // 他のシーダーもここに追加できます
 
 

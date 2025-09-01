@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('main_runes', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('icon')->nullable(); // 画像URLまたはファイル名
-            $table->timestamps();
+        Schema::create('post_stat_rune', function (Blueprint $table) {
+            $table->foreignId('post_id')->constrained()->onDelete('cascade');
+            $table->foreignId('stat_rune_id')->constrained()->onDelete('cascade');
+            $table->primary(['post_id', 'stat_rune_id']);
         });
     }
 
@@ -24,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('main_runes');
+        Schema::dropIfExists('post_stat_rune');
     }
 };

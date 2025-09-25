@@ -268,7 +268,7 @@ class PostController extends Controller
         // 選択済みアイテムをorder順に並べ、6個になるようにnullで埋める
         $selectedItems = $post->items->sortBy('pivot.order')->values();
         $paddedItems = $selectedItems->pad(6, null);
-        // ★★★ここまでが重要★★★
+    
         
         // すべての変数をビューに渡す
         return view('posts.edit', compact(

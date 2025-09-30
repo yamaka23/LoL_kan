@@ -239,20 +239,7 @@
                                 </template>
                             </div>
 
-                            <div id="hidden-inputs" class="hidden">
-                                {{-- 通常ルーンとステータスルーンのIDを送信 --}}
-                                <template x-for="runeId in normalRuneIds">
-                                    <input type="hidden" name="runes[]" :value="runeId">
-                                </template>
-                                <template x-for="statRuneId in statRuneIds">
-                                    <input type="hidden" name="stat_runes[]" :value="statRuneId">
-                                </template>
-
-                                {{-- アイテムのIDを送信 --}}
-                                <template x-for="item in selectedItems.filter(i => i !== null)">
-                                    <input type="hidden" name="items[]" :value="item.id">
-                                </template>
-                            </div>
+                            
 
                             {{-- 内容入力欄と更新ボタン --}}
                             <div class="space-y-6">

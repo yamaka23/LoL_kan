@@ -289,13 +289,24 @@ class PostController extends Controller
 
         // バリデーション (uniqueルールを更新)
         $validated = $request->validate([
-            'title' => 'required|string|max:100|unique:posts,title,' . $post->id,
-            // ... storeメソッドと同じルールが続く ...
+            'title' => 'required|string|max:100|unique:posts,title,' . $post->id, 
+            'content' => 'nullable|string',
+            'champion_id' => 'required|exists:champions,id',
+            'vs_champion_id' => 'nullable|exists:champions,id',
+            'lane_id' => 'required|exists:lanes,id',
+            'runes' => 'required|array',
+            'runes.*' => 'exists:runes,id', 
+            'stat_runes' => 'required|array|size:3',
+            'stat_runes.*' => 'exists:stat_runes,id', 
+            'items' => 'nullable|array',
+            'items.*' => 'exists:items,id', 
         ]);
 
         $runeIds = $validated['runes'];
         $statRuneIds = $validated['stat_runes'];
         $itemIds = $validated['items'] ?? [];
+
+
 
         DB::beginTransaction();
         try {
